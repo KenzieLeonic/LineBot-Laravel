@@ -14,107 +14,41 @@ use LINE\LINEBot\Exception\InvalidSignatureException;
 use LINE\LINEBot\Event\MessageEvent\StickerMessage;
 use LINE\LINEBot\MessageBuilder\MultiMessageBuilder;
 use LINE\LINEBot\MessageBuilder\TextMessageBuilder;
+use LINE\LINEBot\MessageBuilder\StickerMessageBuilder;
 
 class MovieController extends Controller{
     public function index()
     {
-        return Movie::all();
+        return view("login");
     }
 
-//    public function replyMessage(Request $request){
-//        $httpClient = new CurlHTTPClient('linebot.channel_access_token');
-//        $bot = new LINEBot($httpClient, ['channelSecret' => 'linebot.channel_secret']);
-//        $signature = $request->header(LINEBot\Constant\HTTPHeader::LINE_SIGNATURE);
-//
-//        if (empty($signature)) {
-//            abort(400);
-//        }
-//
-//        try {
-//            $events = $bot->parseEventRequest($request->getContent(), $signature);
-//        } catch (LINEBot\Exception\InvalidSignatureException $e) {
-//            abort(400);
-//        } catch (LINEBot\Exception\InvalidEventRequestException $e) {
-//            abort(400);
-//        }
-//
-//        foreach ($events as $event) {
-//            $replyToken = $event->getReplyToken();
-//            if (!($event instanceof LINEBot\Event\MessageEvent)) {
-//                $response = $bot->replyText($replyToken, "Not a message");
-//                continue;
-//            }
-//
-//            if (!($event instanceof LINEBot\Event\MessageEvent\TextMessage) and !($event instanceof LINEBot\Event\MessageEvent\StickerMessage)) {
-//                $response = $bot->replyText($replyToken, "Not a text or a sticker");
-//                continue;
-//            }
-//
-//            $replyText = "";
-//            $movie = null;
-//
-//            //Get User ID
-//            $user_id = $event->getUserId();
-//            $profile = $bot->getProfile($user_id);
-//            $profile = $profile->getJSONDecodedBody();
-//            $displayName = $profile['displayName'];
-//            $pictureUrl = $profile['pictureUrl'];
-//            $statusMessage = $profile['statusMessage'];
-//
-//            //give 10 scores
-//            if ($event instanceof LINEBot\Event\MessageEvent\TextMessage) {
-//                $inputMessage = $event->getText();
-//                $textResponses = [
-//                    "give me 10 scores",
-//                    "greeting",
-//                    "hi"
-//                ];
-//
-//                if ($inputMessage === $textResponses[0]) {
-//                    $movie = Movie::inRandomOrder()->get()->first();
-//
-//                    if ($movie != null) {
-//                        $multiMessageBuilder = new LINEBot\MessageBuilder\MultiMessageBuilder();
-//                        $multiMessageBuilder->add(new LINEBot\MessageBuilder\TextMessageBuilder("ID: " . $movie->id));
-//                        $multiMessageBuilder->add(new LINEBot\MessageBuilder\TextMessageBuilder("Name: " . $movie->name));
-//                        $multiMessageBuilder->add(new LINEBot\MessageBuilder\TextMessageBuilder("Rate: " . $movie->rate));
-//                        $multiMessageBuilder->add(new LINEBot\MessageBuilder\TextMessageBuilder("Type: " . $movie->type));
-//                        $multiMessageBuilder->add(new LINEBot\MessageBuilder\TextMessageBuilder("Length Time: " . $movie->length_time));
-//                        $response = $bot->replyMessage($replyToken, $multiMessageBuilder);
-//                    }
-//                }  else if ($inputMessage === $textResponses[1]) {
-//                        $response = $bot->replyText($replyToken, "greeting");
-//                }  else if ($inputMessage === $textResponses[2]) {
-//                        $response = $bot->replyText($replyToken, "hi");
-//                }  else {
-//                    $inputTextSplit = explode(",", $inputMessage);
-//                    if ($inputTextSplit[0] === "add") {
-//                        $newMovie = new Movie();
-//                        $newMovie->name = $inputTextSplit[1].trim();
-//                        $newMovie->rate = $inputTextSplit[2].trim();
-//                        $newMovie->type = $inputTextSplit[3].trim();
-//                        $newMovie->length_time = $inputTextSplit[4].trim();
-//                        $newMovie->save();
-//                        $response = $bot->replyText($replyToken, "added".$newMovie->name);
-//                        Log::info($newMovie);
-//                        } else {
-//                            $response = $bot->replyText($replyToken, "input text is not a valid response");
-//                        }
-//                    }
-//                }
-//            if ($event instanceof LINEBot\Event\MessageEvent\StickerMessage) {
-//                $packageID = $event->getPackageId();
-//                $stickerID = $event->getStickerId();
-//
-//                $multiMessageBuilder = new LINEBot\MessageBuilder\MultiMessageBuilder();
-//                $multiMessageBuilder->add(new LINEBot\MessageBuilder\TextMessageBuilder("Package ID: ".$packageID));
-//                $multiMessageBuilder->add(new LINEBot\MessageBuilder\TextMessageBuilder("Sticker ID: ".$stickerID));
-//                $response = $bot->replyMessage($replyToken, $multiMessageBuilder);
-//                continue;
-//            }
-//            return [];
-//            }
-//    }
+    //for push movies
+    public function callMovie(Request $request)
+    {
+        $httpClient = new \LINE\LINEBot\HTTPClient\CurlHTTPClient(config('line.channel_access_token'));
+        $bot = new \LINE\LINEBot($httpClient, ['channelSecret' => config('line.channel_secret')]);
+
+        //get request from database
+        Log::info($request);
+        $name = $request->get("name");
+        $rate = $request->get("rate");
+        $type = $request->get("type");
+        $time_limit = $request->get("time_limit");
+
+        $movie = new Movie();
+        $movie->name = $name;
+        $movie->rate = $rate;
+        $movie->type = $type;
+        $movie->time_limit = $time_limit;
+
+        $user_id = "U0c1c68ab7fed6f53706d9f93ed10767c";
+        $bot->pushMessage($user_id, new TextMessageBuilder("someone wanted a movie type ".$movie->type." with rate ".$movie->rate));
+        $bot->pushMessage($user_id, new StickerMessageBuilder("446", "1992"));
+
+        $movieAll =  Movie::all();
+        return redirect()->back();
+
+    }
 
     public function replyMessage (Request $request){
         $httpClient = new \LINE\LINEBot\HTTPClient\CurlHTTPClient(config('line.channel_access_token'));

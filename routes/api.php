@@ -18,5 +18,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-//Route::webhooks('https://mylinebot-005102.loca.lt');
 Route::post('/movie', [\App\Http\Controllers\MovieController::class, 'replyMessage']);
+
+Route::get('/movie/pushMessage',[\App\Http\Controllers\MovieController::class,'index']);
+Route::apiResource('/movie/create', \App\Http\Controllers\MovieApiController::class);
+
